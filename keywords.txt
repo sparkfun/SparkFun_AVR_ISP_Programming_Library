@@ -1,0 +1,57 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SFE_AVR_ISP	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+programTarget	KEYWORD2
+setFileName	KEYWORD2
+setTargetName	KEYWORD2
+setLowFuse	KEYWORD2
+setHighFuse	KEYWORD2
+setProgrammingSpeedFast	KEYWORD2
+mountSDCard	KEYWORD2
+
+program	KEYWORD2
+clearPage	KEYWORD2
+readFlash	KEYWORD2
+writeFlash	KEYWORD2
+readFuse	KEYWORD2
+writeFuse	KEYWORD2
+readSignature	KEYWORD2
+pollUntilReady	KEYWORD2
+commitPage	KEYWORD2
+eraseMemory	KEYWORD2
+startProgramming	KEYWORD2
+stopProgramming	KEYWORD2
+writeData	KEYWORD2
+verifyData	KEYWORD2
+getFuseBytes	KEYWORD2
+hexConv	KEYWORD2
+getSignature	KEYWORD2
+processLine	KEYWORD2
+readHexFile	KEYWORD2
+BB_SPITransfer	KEYWORD2
+
+enableDebugging	KEYWORD2
+disableDebugging	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+lowFuse	LITERAL1
+highFuse	LITERAL1
+extFuse	LITERAL1
+lockByte	LITERAL1
+calibrationByte	LITERAL1
+
