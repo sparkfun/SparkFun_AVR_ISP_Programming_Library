@@ -21,7 +21,7 @@
   
   Connect the ISP pogo pin adapter to pins on your RedBoard:
     MISO/D12 -> D3
-    SCK/D12  -> D4
+    SCK/D13  -> D4
     RST/D10  -> D5
     V+       -> 3.3V (or 5V but **only if** you want to program a 5V chip using 5V SPI programming signals)
     MOSI/D11 -> D6
