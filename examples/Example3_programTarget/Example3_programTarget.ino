@@ -10,7 +10,8 @@
   Buy a board from SparkFun!
   SparkFun ISP Pogo Adapter: https://www.sparkfun.com/products/11591
   SparkFun RedBoard Plus: https://www.sparkfun.com/products/18158
-  microSD Breakout: 
+  microSD Breakout:  https://www.sparkfun.com/products/544
+  microSD Breakout - Level Shifting:  https://www.sparkfun.com/products/13743
 
   This example performs a complete erase-program-verify cycle using a hex file from SD card.
 
@@ -27,8 +28,9 @@
     GND      -> GND
 
   Connect the SD breakout to your RedBoard:
-    VCC            -> 3.3V (Note! SD cards are not 5V compliant! You must use a level-shifter for 5V!)
-    DAT3/CS  / CD  -> D10
+  Note! SD cards are not 5V compliant! You must use a level-shifter for 5V: https://www.sparkfun.com/products/13743
+    VCC            -> 3.3V (See note above)
+    DAT3/CS  / CS  -> D10
     DAT0/SDO / DO  -> SPI CIPO (D12)
     CLK/SCK  / SCK -> SPI SCK (D13)
     CMD/SDI  / DI  -> SPI COPI (D11)
