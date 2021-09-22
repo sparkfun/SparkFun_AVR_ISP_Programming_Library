@@ -139,6 +139,15 @@
     #define DIRECT_MODE_INPUT(base, pin)    nrf_gpio_cfg_input(pin, NRF_GPIO_PIN_NOPULL)
     #define DIRECT_MODE_OUTPUT(base, pin)   nrf_gpio_cfg_output(pin)
 
+    #else
+    #define PIN_TO_BASEREG(pin)             (0)
+    #define PIN_TO_BITMASK(pin)             (pin)
+    #define DIRECT_READ(base, pin)          digitalRead(pin)
+    #define DIRECT_WRITE_LOW(base, pin)     digitalWrite(pin, LOW)
+    #define DIRECT_WRITE_HIGH(base, pin)    digitalWrite(pin, HIGH)
+    #define DIRECT_MODE_INPUT(base, pin)    pinMode(pin, INPUT)
+    #define DIRECT_MODE_OUTPUT(base, pin)   pinMode(pin, OUTPUT)
+
     #endif // /Fast pin code
 
     // meaning of the byte positions in fuses
@@ -312,7 +321,7 @@ class SFE_AVR_ISP
     signatureType currentSignature;
 
     SFE_AVR_ISP(void);
-    
+
     //Begin the library. Store the pin numbers.
     bool begin(uint8_t ispCIPO, uint8_t ispCOPI, uint8_t ispSCK, uint8_t ispRST, uint8_t microSDCS = 255, uint8_t switchEnableSpi = 255); //Initialize the library
 
@@ -412,7 +421,7 @@ class SFE_AVR_ISP
     byte bitBangDelayus = 6; // Default bit-bang delay for programming. Change with setProgrammingClockSpeed
     const byte slowBitBangDelayus = 10; // Bit-bang delay for writing the fuses
     // The delay used by BB_SPITransfer. Changing this to an parameter/argument would involve way too much hacking!
-    byte bitBangDelayAmount = slowBitBangDelayus; 
+    byte bitBangDelayAmount = slowBitBangDelayus;
 
     const byte ENTER_PROGRAMMING_ATTEMPTS = 50;
 
