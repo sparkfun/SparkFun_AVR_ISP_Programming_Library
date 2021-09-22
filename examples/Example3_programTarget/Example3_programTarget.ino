@@ -27,8 +27,8 @@
     GND      -> GND
 
   Connect the SD breakout to your RedBoard:
-    VCC            -> 3.3V (Note! microSD cards are not 5V compliant! You must use a level-shifter for 5V!)
-    DAT3/!CS / CS  -> D10
+    VCC            -> 3.3V (Note! SD cards are not 5V compliant! You must use a level-shifter for 5V!)
+    DAT3/CS  / CD  -> D10
     DAT0/SDO / DO  -> SPI CIPO (D12)
     CLK/SCK  / SCK -> SPI SCK (D13)
     CMD/SDI  / DI  -> SPI COPI (D11)
@@ -57,7 +57,7 @@ void setup()
 
   SPI.begin(); // Needed for SPI communication with the microSD card
 
-  //myISP.enableDebugging(); // Uncomment this line to enable lots of helpful debug messages on Serial
+  myISP.enableDebugging(); // Uncomment this line to enable lots of helpful debug messages on Serial
 
   myISP.begin(microSDCSpin); // Tell the library which chip select pin to use
 
