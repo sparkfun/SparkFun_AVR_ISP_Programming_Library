@@ -43,272 +43,272 @@
 #include <SPI.h>
 #include <SD.h> // Needed for SD read/write and File
 
-    //Fast GPIO code taken from: CapacitiveSense.h v.04
-    //  https://github.com/PaulStoffregen/CapacitiveSensor
-    //  http://www.pjrc.com/teensy/td_libs_CapacitiveSensor.html
-    //  http://playground.arduino.cc/Main/CapacitiveSensor
-    //  Copyright (c) 2008 Paul Bagder  All rights reserved.
+//Fast GPIO code taken from: CapacitiveSense.h v.04
+//  https://github.com/PaulStoffregen/CapacitiveSensor
+//  http://www.pjrc.com/teensy/td_libs_CapacitiveSensor.html
+//  http://playground.arduino.cc/Main/CapacitiveSensor
+//  Copyright (c) 2008 Paul Bagder  All rights reserved.
 
-    // Direct I/O through registers and bitmask (from OneWire library)
+// Direct I/O through registers and bitmask (from OneWire library)
 
-    #if defined(__AVR__)
-    #define PIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
-    #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-    #define IO_REG_TYPE uint8_t
-    #define DIRECT_READ(base, mask)         (((*(base)) & (mask)) ? 1 : 0)
-    #define DIRECT_MODE_INPUT(base, mask)   ((*((base)+1)) &= ~(mask), (*((base)+2)) &= ~(mask))
-    #define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+1)) |= (mask))
-    #define DIRECT_WRITE_LOW(base, mask)    ((*((base)+2)) &= ~(mask))
-    #define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+2)) |= (mask))
+#if defined(__AVR__)
+#define PIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint8_t
+#define DIRECT_READ(base, mask)         (((*(base)) & (mask)) ? 1 : 0)
+#define DIRECT_MODE_INPUT(base, mask)   ((*((base)+1)) &= ~(mask), (*((base)+2)) &= ~(mask))
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+1)) |= (mask))
+#define DIRECT_WRITE_LOW(base, mask)    ((*((base)+2)) &= ~(mask))
+#define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+2)) |= (mask))
 
-    #elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK66FX1M0__) || defined(__MK64FX512__)
-    #define PIN_TO_BASEREG(pin)             (portOutputRegister(pin))
-    #define PIN_TO_BITMASK(pin)             (1)
-    #define IO_REG_TYPE uint8_t
-    #define IO_REG_ASM
-    #define DIRECT_READ(base, mask)         (*((base)+512))
-    #define DIRECT_MODE_INPUT(base, mask)   (*((base)+640) = 0)
-    #define DIRECT_MODE_OUTPUT(base, mask)  (*((base)+640) = 1)
-    #define DIRECT_WRITE_LOW(base, mask)    (*((base)+256) = 1)
-    #define DIRECT_WRITE_HIGH(base, mask)   (*((base)+128) = 1)
+#elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK66FX1M0__) || defined(__MK64FX512__)
+#define PIN_TO_BASEREG(pin)             (portOutputRegister(pin))
+#define PIN_TO_BITMASK(pin)             (1)
+#define IO_REG_TYPE uint8_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (*((base)+512))
+#define DIRECT_MODE_INPUT(base, mask)   (*((base)+640) = 0)
+#define DIRECT_MODE_OUTPUT(base, mask)  (*((base)+640) = 1)
+#define DIRECT_WRITE_LOW(base, mask)    (*((base)+256) = 1)
+#define DIRECT_WRITE_HIGH(base, mask)   (*((base)+128) = 1)
 
-    #elif defined(__MKL26Z64__)
-    #define PIN_TO_BASEREG(pin)             (portOutputRegister(pin))
-    #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-    #define IO_REG_TYPE uint8_t
-    #define IO_REG_ASM
-    #define DIRECT_READ(base, mask)         ((*((base)+16) & (mask)) ? 1 : 0)
-    #define DIRECT_MODE_INPUT(base, mask)   (*((base)+20) &= ~(mask))
-    #define DIRECT_MODE_OUTPUT(base, mask)  (*((base)+20) |= (mask))
-    #define DIRECT_WRITE_LOW(base, mask)    (*((base)+8) = (mask))
-    #define DIRECT_WRITE_HIGH(base, mask)   (*((base)+4) = (mask))
+#elif defined(__MKL26Z64__)
+#define PIN_TO_BASEREG(pin)             (portOutputRegister(pin))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint8_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         ((*((base)+16) & (mask)) ? 1 : 0)
+#define DIRECT_MODE_INPUT(base, mask)   (*((base)+20) &= ~(mask))
+#define DIRECT_MODE_OUTPUT(base, mask)  (*((base)+20) |= (mask))
+#define DIRECT_WRITE_LOW(base, mask)    (*((base)+8) = (mask))
+#define DIRECT_WRITE_HIGH(base, mask)   (*((base)+4) = (mask))
 
-    #elif defined(__SAM3X8E__)
-    #define PIN_TO_BASEREG(pin)             (&(digitalPinToPort(pin)->PIO_PER))
-    #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-    #define IO_REG_TYPE uint32_t
-    #define IO_REG_ASM
-    #define DIRECT_READ(base, mask)         (((*((base)+15)) & (mask)) ? 1 : 0)
-    #define DIRECT_MODE_INPUT(base, mask)   ((*((base)+5)) = (mask))
-    #define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+4)) = (mask))
-    #define DIRECT_WRITE_LOW(base, mask)    ((*((base)+13)) = (mask))
-    #define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+12)) = (mask))
+#elif defined(__SAM3X8E__)
+#define PIN_TO_BASEREG(pin)             (&(digitalPinToPort(pin)->PIO_PER))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (((*((base)+15)) & (mask)) ? 1 : 0)
+#define DIRECT_MODE_INPUT(base, mask)   ((*((base)+5)) = (mask))
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+4)) = (mask))
+#define DIRECT_WRITE_LOW(base, mask)    ((*((base)+13)) = (mask))
+#define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+12)) = (mask))
 
-    #elif defined(__PIC32MX__)
-    #define PIN_TO_BASEREG(pin)             (portModeRegister(digitalPinToPort(pin)))
-    #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-    #define IO_REG_TYPE uint32_t
-    #define IO_REG_ASM
-    #define DIRECT_READ(base, mask)         (((*(base+4)) & (mask)) ? 1 : 0)  //PORTX + 0x10
-    #define DIRECT_MODE_INPUT(base, mask)   ((*(base+2)) = (mask))            //TRISXSET + 0x08
-    #define DIRECT_MODE_OUTPUT(base, mask)  ((*(base+1)) = (mask))            //TRISXCLR + 0x04
-    #define DIRECT_WRITE_LOW(base, mask)    ((*(base+8+1)) = (mask))          //LATXCLR  + 0x24
-    #define DIRECT_WRITE_HIGH(base, mask)   ((*(base+8+2)) = (mask))          //LATXSET + 0x28
+#elif defined(__PIC32MX__)
+#define PIN_TO_BASEREG(pin)             (portModeRegister(digitalPinToPort(pin)))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (((*(base+4)) & (mask)) ? 1 : 0)  //PORTX + 0x10
+#define DIRECT_MODE_INPUT(base, mask)   ((*(base+2)) = (mask))            //TRISXSET + 0x08
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*(base+1)) = (mask))            //TRISXCLR + 0x04
+#define DIRECT_WRITE_LOW(base, mask)    ((*(base+8+1)) = (mask))          //LATXCLR  + 0x24
+#define DIRECT_WRITE_HIGH(base, mask)   ((*(base+8+2)) = (mask))          //LATXSET + 0x28
 
-    #elif defined(ARDUINO_ARCH_ESP8266)
-    #define PIN_TO_BASEREG(pin)             (portOutputRegister(digitalPinToPort(pin)))
-    #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-    #define IO_REG_TYPE uint32_t
-    #define IO_REG_ASM
-    #define DIRECT_READ(base, mask)         (((*(base+6)) & (mask)) ? 1 : 0)    //GPIO_IN_ADDRESS
-    #define DIRECT_MODE_INPUT(base, mask)   ((*(base+5)) = (mask))              //GPIO_ENABLE_W1TC_ADDRESS
-    #define DIRECT_MODE_OUTPUT(base, mask)  ((*(base+4)) = (mask))              //GPIO_ENABLE_W1TS_ADDRESS
-    #define DIRECT_WRITE_LOW(base, mask)    ((*(base+2)) = (mask))              //GPIO_OUT_W1TC_ADDRESS
-    #define DIRECT_WRITE_HIGH(base, mask)   ((*(base+1)) = (mask))              //GPIO_OUT_W1TS_ADDRESS
+#elif defined(ARDUINO_ARCH_ESP8266)
+#define PIN_TO_BASEREG(pin)             (portOutputRegister(digitalPinToPort(pin)))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (((*(base+6)) & (mask)) ? 1 : 0)    //GPIO_IN_ADDRESS
+#define DIRECT_MODE_INPUT(base, mask)   ((*(base+5)) = (mask))              //GPIO_ENABLE_W1TC_ADDRESS
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*(base+4)) = (mask))              //GPIO_ENABLE_W1TS_ADDRESS
+#define DIRECT_WRITE_LOW(base, mask)    ((*(base+2)) = (mask))              //GPIO_OUT_W1TC_ADDRESS
+#define DIRECT_WRITE_HIGH(base, mask)   ((*(base+1)) = (mask))              //GPIO_OUT_W1TS_ADDRESS
 
-    #elif defined(__SAMD21G18A__)
-    // runs extremely slow/unreliable on Arduino Zero - help wanted....
-    #define PIN_TO_BASEREG(pin)             portModeRegister(digitalPinToPort(pin))
-    #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-    #define IO_REG_TYPE uint32_t
-    #define IO_REG_ASM
-    #define DIRECT_READ(base, mask)         (((*((base)+8)) & (mask)) ? 1 : 0)
-    #define DIRECT_MODE_INPUT(base, mask)   ((*((base)+1)) = (mask))
-    #define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+2)) = (mask))
-    #define DIRECT_WRITE_LOW(base, mask)    ((*((base)+5)) = (mask))
-    #define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+6)) = (mask))
+#elif defined(__SAMD21G18A__)
+// runs extremely slow/unreliable on Arduino Zero - help wanted....
+#define PIN_TO_BASEREG(pin)             portModeRegister(digitalPinToPort(pin))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (((*((base)+8)) & (mask)) ? 1 : 0)
+#define DIRECT_MODE_INPUT(base, mask)   ((*((base)+1)) = (mask))
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+2)) = (mask))
+#define DIRECT_WRITE_LOW(base, mask)    ((*((base)+5)) = (mask))
+#define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+6)) = (mask))
 
-    #elif defined(RBL_NRF51822)
-    #define PIN_TO_BASEREG(pin)             (0)
-    #define PIN_TO_BITMASK(pin)             (pin)
-    #define IO_REG_TYPE uint32_t
-    #define IO_REG_ASM
-    #define DIRECT_READ(base, pin)          nrf_gpio_pin_read(pin)
-    #define DIRECT_WRITE_LOW(base, pin)     nrf_gpio_pin_clear(pin)
-    #define DIRECT_WRITE_HIGH(base, pin)    nrf_gpio_pin_set(pin)
-    #define DIRECT_MODE_INPUT(base, pin)    nrf_gpio_cfg_input(pin, NRF_GPIO_PIN_NOPULL)
-    #define DIRECT_MODE_OUTPUT(base, pin)   nrf_gpio_cfg_output(pin)
+#elif defined(RBL_NRF51822)
+#define PIN_TO_BASEREG(pin)             (0)
+#define PIN_TO_BITMASK(pin)             (pin)
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, pin)          nrf_gpio_pin_read(pin)
+#define DIRECT_WRITE_LOW(base, pin)     nrf_gpio_pin_clear(pin)
+#define DIRECT_WRITE_HIGH(base, pin)    nrf_gpio_pin_set(pin)
+#define DIRECT_MODE_INPUT(base, pin)    nrf_gpio_cfg_input(pin, NRF_GPIO_PIN_NOPULL)
+#define DIRECT_MODE_OUTPUT(base, pin)   nrf_gpio_cfg_output(pin)
 
-    #else
-    #define PIN_TO_BASEREG(pin)             (0)
-    #define PIN_TO_BITMASK(pin)             (pin)
-    #define DIRECT_READ(base, pin)          digitalRead(pin)
-    #define DIRECT_WRITE_LOW(base, pin)     digitalWrite(pin, LOW)
-    #define DIRECT_WRITE_HIGH(base, pin)    digitalWrite(pin, HIGH)
-    #define DIRECT_MODE_INPUT(base, pin)    pinMode(pin, INPUT)
-    #define DIRECT_MODE_OUTPUT(base, pin)   pinMode(pin, OUTPUT)
+#else
+#define PIN_TO_BASEREG(pin)             (0)
+#define PIN_TO_BITMASK(pin)             (pin)
+#define DIRECT_READ(base, pin)          digitalRead(pin)
+#define DIRECT_WRITE_LOW(base, pin)     digitalWrite(pin, LOW)
+#define DIRECT_WRITE_HIGH(base, pin)    digitalWrite(pin, HIGH)
+#define DIRECT_MODE_INPUT(base, pin)    pinMode(pin, INPUT)
+#define DIRECT_MODE_OUTPUT(base, pin)   pinMode(pin, OUTPUT)
 
-    #endif // /Fast pin code
+#endif // /Fast pin code
 
-    // meaning of the byte positions in fuses
-    enum {
-      lowFuse,
-      highFuse,
-      extFuse,
-      lockByte,
-      calibrationByte
-    };
+// meaning of the byte positions in fuses
+enum {
+  lowFuse,
+  highFuse,
+  extFuse,
+  lockByte,
+  calibrationByte
+};
 
-    // actions to take
-    enum {
-      checkFile,
-      verifyFlash,
-      writeToFlash,
-    };
+// actions to take
+enum {
+  checkFile,
+  verifyFlash,
+  writeToFlash,
+};
 
-    // types of record in .hex file
-    enum {
-      hexDataRecord,  // 00
-      hexEndOfFile,   // 01
-      hexExtendedSegmentAddressRecord, // 02
-      hexStartSegmentAddressRecord,  // 03
-      hexExtendedLinearAddressRecord, // 04
-      hexStartLinearAddressRecord // 05
-    };
+// types of record in .hex file
+enum {
+  hexDataRecord,  // 00
+  hexEndOfFile,   // 01
+  hexExtendedSegmentAddressRecord, // 02
+  hexStartSegmentAddressRecord,  // 03
+  hexExtendedLinearAddressRecord, // 04
+  hexStartLinearAddressRecord // 05
+};
 
-    // structure to hold signature and other relevant data about each chip
-    typedef struct {
-      byte sig [3];                // chip signature
-      char desc [14];              // fixed array size keeps chip names in PROGMEM
-      unsigned long flashSize;     // how big the flash is (bytes)
-      unsigned int baseBootSize;   // base bootloader size (others are multiples of 2/4/8)
-      unsigned long pageSize;      // flash programming page size (bytes)
-      byte fuseWithBootloaderSize; // ie. one of: lowFuse, highFuse, extFuse
-      bool timedWrites;            // true if pollUntilReady won't work by polling the chip
-    } signatureType;
+// structure to hold signature and other relevant data about each chip
+typedef struct {
+  byte sig [3];                // chip signature
+  char desc [14];              // fixed array size keeps chip names in PROGMEM
+  unsigned long flashSize;     // how big the flash is (bytes)
+  unsigned int baseBootSize;   // base bootloader size (others are multiples of 2/4/8)
+  unsigned long pageSize;      // flash programming page size (bytes)
+  byte fuseWithBootloaderSize; // ie. one of: lowFuse, highFuse, extFuse
+  bool timedWrites;            // true if pollUntilReady won't work by polling the chip
+} signatureType;
 
-    const unsigned long kb = 1024;
-    const byte NO_FUSE = 0xFF;
+const unsigned long kb = 1024;
+const byte NO_FUSE = 0xFF;
 
-    // see Atmega datasheets
-    const signatureType signatures [] PROGMEM =
-    {
-      //     signature        description   flash size   bootloader  flash  fuse     timed
-      //                                                     size    page    to      writes
-      //                                                             size   change
+// see Atmega datasheets
+const signatureType signatures [] PROGMEM =
+{
+  //     signature        description   flash size   bootloader  flash  fuse     timed
+  //                                                     size    page    to      writes
+  //                                                             size   change
 
-      // Attiny43U
-      { { 0x1E, 0x92, 0x0C }, "ATtiny43U",  4 * kb,           0,   64,   NO_FUSE,  false  },
+  // Attiny43U
+  { { 0x1E, 0x92, 0x0C }, "ATtiny43U",  4 * kb,           0,   64,   NO_FUSE,  false  },
 
-      // Attiny841 family
-      { { 0x1E, 0x92, 0x15 }, "ATtiny441",  4 * kb,           0,   16,   NO_FUSE,  false  },
-      { { 0x1E, 0x93, 0x15 }, "ATtiny841",  8 * kb,           0,   16,   NO_FUSE,  false  },
+  // Attiny841 family
+  { { 0x1E, 0x92, 0x15 }, "ATtiny441",  4 * kb,           0,   16,   NO_FUSE,  false  },
+  { { 0x1E, 0x93, 0x15 }, "ATtiny841",  8 * kb,           0,   16,   NO_FUSE,  false  },
 
-      // Attiny84 family
-      { { 0x1E, 0x91, 0x0B }, "ATtiny24",   2 * kb,           0,   32,   NO_FUSE,  false  },
-      { { 0x1E, 0x92, 0x07 }, "ATtiny44",   4 * kb,           0,   64,   NO_FUSE,  false  },
-      { { 0x1E, 0x93, 0x0C }, "ATtiny84",   8 * kb,           0,   64,   NO_FUSE,  false  },
+  // Attiny84 family
+  { { 0x1E, 0x91, 0x0B }, "ATtiny24",   2 * kb,           0,   32,   NO_FUSE,  false  },
+  { { 0x1E, 0x92, 0x07 }, "ATtiny44",   4 * kb,           0,   64,   NO_FUSE,  false  },
+  { { 0x1E, 0x93, 0x0C }, "ATtiny84",   8 * kb,           0,   64,   NO_FUSE,  false  },
 
-      // Attiny85 family
-      { { 0x1E, 0x91, 0x08 }, "ATtiny25",   2 * kb,           0,   32,   NO_FUSE,  false  },
-      { { 0x1E, 0x92, 0x06 }, "ATtiny45",   4 * kb,           0,   64,   NO_FUSE,  false  },
-      { { 0x1E, 0x93, 0x0B }, "ATtiny85",   8 * kb,           0,   64,   NO_FUSE,  false  },
+  // Attiny85 family
+  { { 0x1E, 0x91, 0x08 }, "ATtiny25",   2 * kb,           0,   32,   NO_FUSE,  false  },
+  { { 0x1E, 0x92, 0x06 }, "ATtiny45",   4 * kb,           0,   64,   NO_FUSE,  false  },
+  { { 0x1E, 0x93, 0x0B }, "ATtiny85",   8 * kb,           0,   64,   NO_FUSE,  false  },
 
-      // Atmega328 family
-      { { 0x1E, 0x92, 0x0A }, "ATmega48PA",   4 * kb,         0,    64,  NO_FUSE,  false  },
-      { { 0x1E, 0x93, 0x0F }, "ATmega88PA",   8 * kb,       256,   128,  extFuse,  false },
-      { { 0x1E, 0x94, 0x0B }, "ATmega168PA", 16 * kb,       256,   128,  extFuse,  false },
-      { { 0x1E, 0x94, 0x06 }, "ATmega168V",  16 * kb,       256,   128,  extFuse,  false },
-      { { 0x1E, 0x95, 0x0F }, "ATmega328P",  32 * kb,       512,   128,  highFuse, false },
-      { { 0x1E, 0x95, 0x16 }, "ATmega328PB", 32 * kb,       512,   128,  highFuse, false },
-      { { 0x1E, 0x95, 0x14 }, "ATmega328",   32 * kb,       512,   128,  highFuse, false },
+  // Atmega328 family
+  { { 0x1E, 0x92, 0x0A }, "ATmega48PA",   4 * kb,         0,    64,  NO_FUSE,  false  },
+  { { 0x1E, 0x93, 0x0F }, "ATmega88PA",   8 * kb,       256,   128,  extFuse,  false },
+  { { 0x1E, 0x94, 0x0B }, "ATmega168PA", 16 * kb,       256,   128,  extFuse,  false },
+  { { 0x1E, 0x94, 0x06 }, "ATmega168V",  16 * kb,       256,   128,  extFuse,  false },
+  { { 0x1E, 0x95, 0x0F }, "ATmega328P",  32 * kb,       512,   128,  highFuse, false },
+  { { 0x1E, 0x95, 0x16 }, "ATmega328PB", 32 * kb,       512,   128,  highFuse, false },
+  { { 0x1E, 0x95, 0x14 }, "ATmega328",   32 * kb,       512,   128,  highFuse, false },
 
-      // Atmega644 family
-      { { 0x1E, 0x94, 0x0A }, "ATmega164P",   16 * kb,      256,   128,  highFuse, false },
-      { { 0x1E, 0x95, 0x08 }, "ATmega324P",   32 * kb,      512,   128,  highFuse, false },
-      { { 0x1E, 0x96, 0x0A }, "ATmega644P",   64 * kb,   1 * kb,   256,  highFuse, false },
+  // Atmega644 family
+  { { 0x1E, 0x94, 0x0A }, "ATmega164P",   16 * kb,      256,   128,  highFuse, false },
+  { { 0x1E, 0x95, 0x08 }, "ATmega324P",   32 * kb,      512,   128,  highFuse, false },
+  { { 0x1E, 0x96, 0x0A }, "ATmega644P",   64 * kb,   1 * kb,   256,  highFuse, false },
 
-      // Atmega2560 family
-      { { 0x1E, 0x96, 0x08 }, "ATmega640",    64 * kb,   1 * kb,   256,  highFuse, false },
-      { { 0x1E, 0x97, 0x03 }, "ATmega1280",  128 * kb,   1 * kb,   256,  highFuse, false },
-      { { 0x1E, 0x97, 0x04 }, "ATmega1281",  128 * kb,   1 * kb,   256,  highFuse, false },
-      { { 0x1E, 0x98, 0x01 }, "ATmega2560",  256 * kb,   1 * kb,   256,  highFuse, false },
+  // Atmega2560 family
+  { { 0x1E, 0x96, 0x08 }, "ATmega640",    64 * kb,   1 * kb,   256,  highFuse, false },
+  { { 0x1E, 0x97, 0x03 }, "ATmega1280",  128 * kb,   1 * kb,   256,  highFuse, false },
+  { { 0x1E, 0x97, 0x04 }, "ATmega1281",  128 * kb,   1 * kb,   256,  highFuse, false },
+  { { 0x1E, 0x98, 0x01 }, "ATmega2560",  256 * kb,   1 * kb,   256,  highFuse, false },
 
-      { { 0x1E, 0x98, 0x02 }, "ATmega2561",  256 * kb,   1 * kb,   256,  highFuse, false },
+  { { 0x1E, 0x98, 0x02 }, "ATmega2561",  256 * kb,   1 * kb,   256,  highFuse, false },
 
-      // AT90USB family
-      { { 0x1E, 0x93, 0x82 }, "At90USB82",    8 * kb,       512,   128,  highFuse, false },
-      { { 0x1E, 0x94, 0x82 }, "At90USB162",  16 * kb,       512,   128,  highFuse, false },
+  // AT90USB family
+  { { 0x1E, 0x93, 0x82 }, "At90USB82",    8 * kb,       512,   128,  highFuse, false },
+  { { 0x1E, 0x94, 0x82 }, "At90USB162",  16 * kb,       512,   128,  highFuse, false },
 
-      // Atmega32U2 family
-      { { 0x1E, 0x93, 0x89 }, "ATmega8U2",    8 * kb,       512,   128,  highFuse, false },
-      { { 0x1E, 0x94, 0x89 }, "ATmega16U2",  16 * kb,       512,   128,  highFuse, false },
-      { { 0x1E, 0x95, 0x8A }, "ATmega32U2",  32 * kb,       512,   128,  highFuse, false },
+  // Atmega32U2 family
+  { { 0x1E, 0x93, 0x89 }, "ATmega8U2",    8 * kb,       512,   128,  highFuse, false },
+  { { 0x1E, 0x94, 0x89 }, "ATmega16U2",  16 * kb,       512,   128,  highFuse, false },
+  { { 0x1E, 0x95, 0x8A }, "ATmega32U2",  32 * kb,       512,   128,  highFuse, false },
 
-      // Atmega32U4 family -  (datasheet is wrong about flash page size being 128 words)
-      { { 0x1E, 0x94, 0x88 }, "ATmega16U4",  16 * kb,       512,   128,  highFuse, false },
-      { { 0x1E, 0x95, 0x87 }, "ATmega32U4",  32 * kb,       512,   128,  highFuse, false },
+  // Atmega32U4 family -  (datasheet is wrong about flash page size being 128 words)
+  { { 0x1E, 0x94, 0x88 }, "ATmega16U4",  16 * kb,       512,   128,  highFuse, false },
+  { { 0x1E, 0x95, 0x87 }, "ATmega32U4",  32 * kb,       512,   128,  highFuse, false },
 
-      // ATmega1284P family
-      { { 0x1E, 0x97, 0x05 }, "ATmega1284P", 128 * kb,   1 * kb,   256,  highFuse, false },
-      { { 0x1E, 0x97, 0x06 }, "ATmega1284",  128 * kb,   1 * kb,   256,  highFuse, false },
+  // ATmega1284P family
+  { { 0x1E, 0x97, 0x05 }, "ATmega1284P", 128 * kb,   1 * kb,   256,  highFuse, false },
+  { { 0x1E, 0x97, 0x06 }, "ATmega1284",  128 * kb,   1 * kb,   256,  highFuse, false },
 
-      // ATtiny4313 family
-      { { 0x1E, 0x91, 0x0A }, "ATtiny2313A",   2 * kb,        0,    32,  NO_FUSE,  false   },
-      { { 0x1E, 0x92, 0x0D }, "ATtiny4313",    4 * kb,        0,    64,  NO_FUSE,  false   },
+  // ATtiny4313 family
+  { { 0x1E, 0x91, 0x0A }, "ATtiny2313A",   2 * kb,        0,    32,  NO_FUSE,  false   },
+  { { 0x1E, 0x92, 0x0D }, "ATtiny4313",    4 * kb,        0,    64,  NO_FUSE,  false   },
 
-      // ATtiny13 family
-      { { 0x1E, 0x90, 0x07 }, "ATtiny13A",     1 * kb,        0,    32,  NO_FUSE,  false  },
+  // ATtiny13 family
+  { { 0x1E, 0x90, 0x07 }, "ATtiny13A",     1 * kb,        0,    32,  NO_FUSE,  false  },
 
-      // Atmega8A family
-      { { 0x1E, 0x93, 0x07 }, "ATmega8A",      8 * kb,      256,    64,  highFuse, true },
+  // Atmega8A family
+  { { 0x1E, 0x93, 0x07 }, "ATmega8A",      8 * kb,      256,    64,  highFuse, true },
 
-      // ATmega64rfr2 family
-      { { 0x1E, 0xA6, 0x02 }, "ATmega64rfr2",  256 * kb, 1 * kb,   256,  highFuse, false },
-      { { 0x1E, 0xA7, 0x02 }, "ATmega128rfr2", 256 * kb, 1 * kb,   256,  highFuse, false },
-      { { 0x1E, 0xA8, 0x02 }, "ATmega256rfr2", 256 * kb, 1 * kb,   256,  highFuse, false },
+  // ATmega64rfr2 family
+  { { 0x1E, 0xA6, 0x02 }, "ATmega64rfr2",  256 * kb, 1 * kb,   256,  highFuse, false },
+  { { 0x1E, 0xA7, 0x02 }, "ATmega128rfr2", 256 * kb, 1 * kb,   256,  highFuse, false },
+  { { 0x1E, 0xA8, 0x02 }, "ATmega256rfr2", 256 * kb, 1 * kb,   256,  highFuse, false },
 
-    };  // end of signatures
+};  // end of signatures
 
-    /*
-      Functions needed for SPI (ICSP) progamming
-      Author: Nick Gammon
+/*
+  Functions needed for SPI (ICSP) progamming
+  Author: Nick Gammon
 
-      From: https://github.com/nickgammon/arduino_sketches/blob/master/Atmega_Hex_Uploader/ICSP_Utils.ino
-    */
+  From: https://github.com/nickgammon/arduino_sketches/blob/master/Atmega_Hex_Uploader/ICSP_Utils.ino
+*/
 
-    // programming commands to send via SPI to the chip
-    enum {
-      progamEnable = 0xAC,
+// programming commands to send via SPI to the chip
+enum {
+  progamEnable = 0xAC,
 
-      // writes are preceded by progamEnable
-      chipErase = 0x80,
-      writeLockByte = 0xE0,
-      writeLowFuseByte = 0xA0,
-      writeHighFuseByte = 0xA8,
-      writeExtendedFuseByte = 0xA4,
+  // writes are preceded by progamEnable
+  chipErase = 0x80,
+  writeLockByte = 0xE0,
+  writeLowFuseByte = 0xA0,
+  writeHighFuseByte = 0xA8,
+  writeExtendedFuseByte = 0xA4,
 
-      pollReady = 0xF0,
+  pollReady = 0xF0,
 
-      programAcknowledge = 0x53,
+  programAcknowledge = 0x53,
 
-      readSignatureByte = 0x30,
-      readCalibrationByte = 0x38,
+  readSignatureByte = 0x30,
+  readCalibrationByte = 0x38,
 
-      readLowFuseByte = 0x50,       readLowFuseByteArg2 = 0x00,
-      readExtendedFuseByte = 0x50,  readExtendedFuseByteArg2 = 0x08,
-      readHighFuseByte = 0x58,      readHighFuseByteArg2 = 0x08,
-      readLockByte = 0x58,          readLockByteArg2 = 0x00,
+  readLowFuseByte = 0x50,       readLowFuseByteArg2 = 0x00,
+  readExtendedFuseByte = 0x50,  readExtendedFuseByteArg2 = 0x08,
+  readHighFuseByte = 0x58,      readHighFuseByteArg2 = 0x08,
+  readLockByte = 0x58,          readLockByteArg2 = 0x00,
 
-      readProgramMemory = 0x20,
-      writeProgramMemory = 0x4C,
-      loadExtendedAddressByte = 0x4D,
-      loadProgramMemory = 0x40,
+  readProgramMemory = 0x20,
+  writeProgramMemory = 0x4C,
+  loadExtendedAddressByte = 0x4D,
+  loadProgramMemory = 0x40,
 
-    };  // end of enum
+};  // end of enum
 
-    // which program instruction writes which fuse
-    const byte fuseCommands [4] = { writeLowFuseByte, writeHighFuseByte, writeExtendedFuseByte, writeLockByte };
+// which program instruction writes which fuse
+const byte fuseCommands [4] = { writeLowFuseByte, writeHighFuseByte, writeExtendedFuseByte, writeLockByte };
 
 class SFE_AVR_ISP
 {
