@@ -33,21 +33,18 @@
 
 #include "SparkFun_AVR_ISP_Programming.h"
 
-SFE_AVR_ISP::SFE_AVR_ISP(void)
+//Constructor - define the pins as const uint8_t to make the DIRECT pin support as fast as possible
+SFE_AVR_ISP::SFE_AVR_ISP(uint8_t ispCIPO, uint8_t ispCOPI, uint8_t ispSCK, uint8_t ispRST)
+             : ISP_CIPO(ispCIPO), ISP_COPI(ispCOPI), ISP_SCK(ispSCK), ISP_RST(ispRST)
 {
-  // Constructor
 }
 
 //Initialize the library
-bool SFE_AVR_ISP::begin(uint8_t ispCIPO, uint8_t ispCOPI, uint8_t ispSCK, uint8_t ispRST, uint8_t microSDCS, uint8_t switchEnableSpi)
+bool SFE_AVR_ISP::begin(uint8_t microSDCS, uint8_t switchEnableSpi)
 {
   // Grab the pins
   SWITCH_ENABLE_SPI = switchEnableSpi; // Defaults to 255
   MICROSD_CS = microSDCS; // Defaults to 255
-  ISP_CIPO = ispCIPO;
-  ISP_COPI = ispCOPI;
-  ISP_SCK = ispSCK;
-  ISP_RST = ispRST;
 
   // Initialize the pins
   if (SWITCH_ENABLE_SPI < 255)

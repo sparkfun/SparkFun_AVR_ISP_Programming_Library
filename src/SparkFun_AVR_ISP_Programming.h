@@ -320,10 +320,11 @@ class SFE_AVR_ISP
     // copy of current signature entry for matching processor
     signatureType currentSignature;
 
-    SFE_AVR_ISP(void);
+    //Constructor
+    SFE_AVR_ISP(uint8_t ispCIPO, uint8_t ispCOPI, uint8_t ispSCK, uint8_t ispRST);
 
-    //Begin the library. Store the pin numbers.
-    bool begin(uint8_t ispCIPO, uint8_t ispCOPI, uint8_t ispSCK, uint8_t ispRST, uint8_t microSDCS = 255, uint8_t switchEnableSpi = 255); //Initialize the library
+    //Begin the library
+    bool begin(uint8_t microSDCS = 255, uint8_t switchEnableSpi = 255); //Initialize the library
 
     //Sets the local file name variable for the firmware file you want
     //to load from the SD card
@@ -444,12 +445,14 @@ class SFE_AVR_ISP
     unsigned long extendedAddress;
     unsigned int lineCount;
 
-    uint8_t SWITCH_ENABLE_SPI = 255; // The pin which enables the SD card SPI buffer
-    uint8_t MICROSD_CS = 255; // The pin connected to the SD card chip select
-    uint8_t ISP_CIPO; // The pin connected to the target CIPO pin
-    uint8_t ISP_COPI; // The pin connected to the target COPI pin
-    uint8_t ISP_SCK; // The pin connected to the target SCK pin
-    uint8_t ISP_RST; // The pin connected to the target RST pin
+    // Define the ISP pins as const uint8_t to make the DIRECT pin support as fast as possible
+    const uint8_t ISP_CIPO; // The pin connected to the target CIPO pin
+    const uint8_t ISP_COPI; // The pin connected to the target COPI pin
+    const uint8_t ISP_SCK; // The pin connected to the target SCK pin
+    const uint8_t ISP_RST; // The pin connected to the target RST pin
+
+    uint8_t SWITCH_ENABLE_SPI; // The pin which enables the SD card SPI buffer
+    uint8_t MICROSD_CS; // The pin connected to the SD card chip select
 
     //To get to the SD card we may need to provide it power by enabling an SPI switch/buffer
     //And begin SD with the SD CS pin

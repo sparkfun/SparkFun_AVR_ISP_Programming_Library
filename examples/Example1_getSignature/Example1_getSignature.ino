@@ -33,12 +33,13 @@
 
 #include "SparkFun_AVR_ISP_Programming.h" // Click here to get the library: http://librarymanager/All#SparkFun_AVR_ISP_Programming
 
-SFE_AVR_ISP myISP;
-
+// These are the four GPIO pins that will be used for bit-banged ISP SPI. Change these if required.
 const uint8_t ispCIPOpin = 3; // Use D3 to control the ISP CIPO pin
 const uint8_t ispSCKpin  = 4; // Use D4 to control the ISP SCK pin
 const uint8_t ispRSTpin  = 5; // Use D5 to control the ISP RST pin
 const uint8_t ispCOPIpin = 6; // Use D6 to control the ISP COPI pin
+
+SFE_AVR_ISP myISP(ispCIPOpin, ispCOPIpin, ispSCKpin, ispRSTpin); // Tell the library which pins to use
 
 void setup()
 {
@@ -47,7 +48,7 @@ void setup()
 
   //myISP.enableDebugging(); // Uncomment this line to enable lots of helpful debug messages on Serial
 
-  myISP.begin(ispCIPOpin, ispCOPIpin, ispSCKpin, ispRSTpin); // Tell the library which pins to use
+  myISP.begin();
 
   myISP.startProgramming(); // Go into programming mode
   myISP.getSignature(); // Attempt to read the signature from the ISP device
