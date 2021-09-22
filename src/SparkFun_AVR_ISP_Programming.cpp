@@ -93,9 +93,15 @@ bool SFE_AVR_ISP::programTarget()
     return (false);
   }
 
-  if (lowFuseDefined == false || highFuseDefined == false)
+  if (lowFuseDefined == false)
   {
-    debugPrintln(F("SFE_AVR_ISP::programTarget: Fuses not defined"));
+    debugPrintln(F("SFE_AVR_ISP::programTarget: Low fuse not defined"));
+    return (false);
+  }
+
+  if (highFuseDefined == false)
+  {
+    debugPrintln(F("SFE_AVR_ISP::programTarget: High fuse not defined"));
     return (false);
   }
 
@@ -113,7 +119,7 @@ bool SFE_AVR_ISP::programTarget()
   debugPrintln(F("SFE_AVR_ISP::programTarget: Firmware file opened"));
 
   //Begin Atmel ISP programming
-  bitBangDelayAmount = 6; //Go slow
+  bitBangDelayAmount = slowBitBangDelayus; //Go slow
   startProgramming();
   if (getSignature() == false)
   {
@@ -135,11 +141,25 @@ bool SFE_AVR_ISP::programTarget()
 
   writeFuse(newLowFuseValue, lowFuse);
   writeFuse(newHighFuseValue, highFuse);
+  if (newExtendedFuseValue)
+    writeFuse(newExtendedFuseValue, extFuse);
 
   //Check fuses were set correctly
-  if (readFuse(lowFuse) != newLowFuseValue || readFuse(highFuse) != newHighFuseValue)
+  if (readFuse(lowFuse) != newLowFuseValue)
   {
-    debugPrintln(F("SFE_AVR_ISP::programTarget: Fuse programming failed"));
+    debugPrintln(F("SFE_AVR_ISP::programTarget: Low fuse programming failed"));
+    stopProgramming();
+    return (false);
+  }
+  if (readFuse(highFuse) != newHighFuseValue)
+  {
+    debugPrintln(F("SFE_AVR_ISP::programTarget: High fuse programming failed"));
+    stopProgramming();
+    return (false);
+  }
+  if (newExtendedFuseValue && readFuse(extFuse) != newExtendedFuseValue)
+  {
+    debugPrintln(F("SFE_AVR_ISP::programTarget: Extended fuse programming failed"));
     stopProgramming();
     return (false);
   }
@@ -148,7 +168,7 @@ bool SFE_AVR_ISP::programTarget()
   stopProgramming(); //Once we change the fuses, we need to hang up, and
   startProgramming(); //start ISP over again. This will reset IC and cause IC to run at new fuses.
 
-  if(programSpeedFast == true) bitBangDelayAmount = 0; //Go fast - this is approximately 500kHz and is approriate if we have set osc fuse bits to > 1MHz
+  bitBangDelayAmount = bitBangDelayus; //Go fast
 
   //Write contents of firmware file to target
   if (readHexFile(firmwareFile, writeToFlash) == false)
@@ -214,16 +234,50 @@ void SFE_AVR_ISP::setHighFuse(byte fuse)
   highFuseDefined = true;
 }
 
-//The max programming speed is 1/8 of the oscillator speed
+//Sets the local extended fuse byte.
+//Optional: the user can call this to change the extended fuse in programTarget()
+void SFE_AVR_ISP::setExtendedFuse(byte fuse)
+{
+  newExtendedFuseValue = fuse;
+  extendedFuseDefined = true;
+}
+
+//The max programming speed is 1/8 of the target's oscillator speed
 //If target is internal 1MHz, this is 125kHz
 //If target is internal 8MHz, this is 1MHz
-//Because we are bit banging, the fastest we can do is 500kHz, so let's do that
-//You should only call this if you also set the fuse bits to enable a 8MHz or faster clock (either internal 8MHz osc or external 8+MHz osc)
-//We could do this automatically by identifying the right fuse bits but I don't have the time to expand signatureType PROGMEM and look up
-//all the fuse bits for all the various targets
-void SFE_AVR_ISP::setProgrammingSpeedFast()
+//Remember that the oscillator speed is controlled by the fuses
+//The user needs to ensure that the speed selected here is appropriate
+//(Because we are bit banging, the fastest we can do is ~500kHz)
+void SFE_AVR_ISP::setProgrammingClockSpeed(uint32_t speed)
 {
-  programSpeedFast = true; //Bit bang at 500kHz when possible
+  debugPrint(F("SFE_AVR_ISP::setProgrammingClockSpeed: selected clock speed is "));
+  debugPrint1(speed);
+  debugPrintln(F(" Hz"));
+  if (speed >= 500000) // Convert speed to delay. Do it long hand to avoid rounding errors
+    bitBangDelayus = 0;
+  else if (speed >= 333333)
+    bitBangDelayus = 1;
+  else if (speed >= 250000)
+    bitBangDelayus = 2;
+  else if (speed >= 166666)
+    bitBangDelayus = 3;
+  else if (speed >= 125000)
+    bitBangDelayus = 4;
+  else if (speed >= 100000)
+    bitBangDelayus = 5;
+  else if (speed >= 83333)
+    bitBangDelayus = 6;
+  else if (speed >= 71249)
+    bitBangDelayus = 7;
+  else if (speed >= 62500)
+    bitBangDelayus = 8;
+  else if (speed >= 55555)
+    bitBangDelayus = 9;
+  else //if (speed >= 50000)
+    bitBangDelayus = 10;
+  debugPrint(F("SFE_AVR_ISP::setProgrammingClockSpeed: setting the bit-bang delay to "));
+  debugPrint1(bitBangDelayus);
+  debugPrintln(F(" microseconds"));
 }
 
 //To get to the SD card we need to provide it power, enable the SPI switch
@@ -235,7 +289,6 @@ bool SFE_AVR_ISP::mountSDCard()
   if (MICROSD_CS == 255)
   {
     debugPrintln(F("SFE_AVR_ISP::mountSDCard: MICROSD_CS not defined!"));
-    sdMounted = false;
     return (false);
   }
 
@@ -249,7 +302,6 @@ bool SFE_AVR_ISP::mountSDCard()
       digitalWrite(SWITCH_ENABLE_SPI, LOW); //Enable SPI
     return (false);
   }
-  sdMounted = true;
   return (true);
 }
 

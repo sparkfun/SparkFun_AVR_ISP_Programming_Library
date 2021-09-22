@@ -308,75 +308,23 @@ class SFE_AVR_ISP
 
     byte fuses [5]; // copy of fuses/lock bytes found for this processor
 
-    char firmwareFileName[13] = {'\0'}; //Firmware file to read. Limited file name length to 8.3 format
-    bool firmwareFileNameDefined = false; //Make sure user sets the filename before calling programTarget()
-    char targetDevice[14] = {'\0'}; //Name of the chip we want to program
-    bool targetDeviceDefined = false; //Make sure user sets the target device before calling programTarget()
-    byte newLowFuseValue;
-    bool lowFuseDefined = false; //Make sure user sets the fuse before calling programTarget()
-    byte newHighFuseValue;
-    bool highFuseDefined = false; //Make sure user sets the fuse before calling programTarget()
-
-    //Control the speed of bit bang transfers
-    //Don't go faster than 125kHz when ATtiny is set to 1MHz internal
-    //bitBangDelayAmount = 6; //Original - 92us per call = 87kHz
-    //bitBangDelayAmount = 4; //60 us per call = 133kHz
-    //bitBangDelayAmount = 2; //28 us per call = 286kHz
-    //bitBangDelayAmount = 0; //16 us per call = 500kHz
-    byte bitBangDelayAmount = 6;
-    bool programSpeedFast = false; //After we have set fuse bits, should we program fast? This goes true if setProgrammingSpeedFast() is called.
-
-    const byte ENTER_PROGRAMMING_ATTEMPTS = 50;
-
-    #define NUMITEMS(arg) ((unsigned int) (sizeof (arg) / sizeof (arg [0]))) // number of items in an array
-
-    byte lastAddressMSB = 0;
-
     // copy of current signature entry for matching processor
     signatureType currentSignature;
 
-    unsigned long pagemask;
-    unsigned long oldPage;
-
-    unsigned int errors; // count errors
-
-    const unsigned long NO_PAGE = 0xFFFFFFFF;
-
-    unsigned long lowestAddress;
-    unsigned long highestAddress;
-    unsigned long bytesWritten;
-
-    bool gotEndOfFile;
-    unsigned long extendedAddress;
-    unsigned int lineCount;
-
-    uint8_t SWITCH_ENABLE_SPI = 255; // The pin which enables the SD card SPI buffer
-    uint8_t MICROSD_CS = 255; // The pin connected to the SD card chip select
-    uint8_t ISP_CIPO; // The pin connected to the target CIPO pin
-    uint8_t ISP_COPI; // The pin connected to the target COPI pin
-    uint8_t ISP_SCK; // The pin connected to the target SCK pin
-    uint8_t ISP_RST; // The pin connected to the target RST pin
-
-    bool sdMounted = false;
-
     SFE_AVR_ISP(void);
     
+    //Begin the library. Store the pin numbers.
     bool begin(uint8_t ispCIPO, uint8_t ispCOPI, uint8_t ispSCK, uint8_t ispRST, uint8_t microSDCS = 255, uint8_t switchEnableSpi = 255); //Initialize the library
-
-    //This is the main programming function
-    //Power up the SD card, mount it, open the firmware file
-    //Set fuses, reset target (so new fuses can take effect)
-    //Erase the target, program the firmware file onto target, verify firmware
-    //Returns true if everything was successful
-    bool programTarget();
 
     //Sets the local file name variable for the firmware file you want
     //to load from the SD card
+    //Call this before calling programTarget()
     void setFileName(char *name);
 
     //Sets the local target name for the AVR IC you want to program. ie: "ATtiny84"
     //If your target name does not match the name associated with the found
     //signature then an error is raised
+    //Call this before calling programTarget()
     void setTargetName(char *name);
 
     //Sets the local low fuse byte.
@@ -387,35 +335,36 @@ class SFE_AVR_ISP
     //Set this before calling programTarget()
     void setHighFuse(byte fuse);
 
-    void setProgrammingSpeedFast();
+    //Sets the local extended fuse byte.
+    //The user can call this if they want to change the extended fuse during programTarget()
+    void setExtendedFuse(byte fuse);
 
-    //To get to the SD card we need to provide it power, enable the SPI switch
-    //And begin SD with the SD CS pin
-    bool mountSDCard();
+    //This is the main programming function
+    //Power up the SD card, mount it, open the firmware file
+    //Set fuses, reset target (so new fuses can take effect)
+    //Erase the target, program the firmware file onto target, verify firmware
+    //Returns true if everything was successful
+    bool programTarget();
+
+    //Call this function to set the clock speed (bit-bang delay) during the programming cycle
+    //The default clock delay is 6 microseconds (6us high, 6us low = approx. 87kHz)
+    void setProgrammingClockSpeed(uint32_t speed);
 
     // Functions needed for SPI (ICSP) progamming
     // Author: Nick Gammon
     // From: https://github.com/nickgammon/arduino_sketches/blob/master/Atmega_Hex_Uploader/ICSP_Utils.ino
-    byte program(const byte b1, const byte b2 = 0, const byte b3 = 0, const byte b4 = 0);
-    void clearPage();
-    byte readFlash (unsigned long addr);
-    void writeFlash (unsigned long addr, const byte data);
-    byte readFuse (const byte which);
-    void writeFuse(byte newValue, byte whichFuse);
-    void readSignature (byte sig [3]);
-    void pollUntilReady();
-    void commitPage(unsigned long addr, bool showMessage = false);
-    void eraseMemory();
     bool startProgramming();
     void stopProgramming();
+    bool getSignature();
+    void readSignature (byte sig [3]);
+    void getFuseBytes();
+    byte readFuse (const byte which);
+    void writeFuse(byte newValue, byte whichFuse);
+    byte readFlash (unsigned long addr);
+    void writeFlash (unsigned long addr, const byte data);
+    void eraseMemory();
     void writeData(const unsigned long addr, const byte * pData, const int length);
     void verifyData(const unsigned long addr, const byte * pData, const int length);
-    void getFuseBytes();
-    bool hexConv(const char * (& pStr), byte &b);
-    bool getSignature();
-    bool processLine(const char * pLine, const byte action);
-    bool readHexFile(File firmwareFile, const byte action);
-    byte BB_SPITransfer(byte c);
 
     // Enable debug messages using the chosen Serial port (Stream)
     // Boards like the RedBoard Turbo use SerialUSB (not Serial).
@@ -442,6 +391,72 @@ class SFE_AVR_ISP
     void disableDebugging(void);      //Turn off debug statements
 
   private:
+
+    char firmwareFileName[13] = {'\0'}; //Firmware file to read. Limited file name length to 8.3 format
+    bool firmwareFileNameDefined = false; //Make sure user sets the filename before calling programTarget()
+    char targetDevice[14] = {'\0'}; //Name of the chip we want to program
+    bool targetDeviceDefined = false; //Make sure user sets the target device before calling programTarget()
+    byte newLowFuseValue;
+    bool lowFuseDefined = false; //Make sure user sets the fuse before calling programTarget()
+    byte newHighFuseValue;
+    bool highFuseDefined = false; //Make sure user sets the fuse before calling programTarget()
+    byte newExtendedFuseValue;
+    bool extendedFuseDefined = false; //Optional: flag if the user wants to change the extended fuse in programTarget()
+
+    //Control the speed of bit bang transfers
+    //Don't go faster than 125kHz when ATtiny is set to 1MHz internal
+    //bitBangDelayAmount = 6; //Original - 92us per call = 87kHz
+    //bitBangDelayAmount = 4; //60 us per call = 133kHz
+    //bitBangDelayAmount = 2; //28 us per call = 286kHz
+    //bitBangDelayAmount = 0; //16 us per call = 500kHz
+    byte bitBangDelayus = 6; // Default bit-bang delay for programming. Change with setProgrammingClockSpeed
+    const byte slowBitBangDelayus = 10; // Bit-bang delay for writing the fuses
+    // The delay used by BB_SPITransfer. Changing this to an parameter/argument would involve way too much hacking!
+    byte bitBangDelayAmount = slowBitBangDelayus; 
+
+    const byte ENTER_PROGRAMMING_ATTEMPTS = 50;
+
+    #define NUMITEMS(arg) ((unsigned int) (sizeof (arg) / sizeof (arg [0]))) // number of items in an array
+
+    byte lastAddressMSB = 0;
+
+    unsigned long pagemask;
+    unsigned long oldPage;
+
+    unsigned int errors; // count errors
+
+    const unsigned long NO_PAGE = 0xFFFFFFFF;
+
+    unsigned long lowestAddress;
+    unsigned long highestAddress;
+    unsigned long bytesWritten;
+
+    bool gotEndOfFile;
+    unsigned long extendedAddress;
+    unsigned int lineCount;
+
+    uint8_t SWITCH_ENABLE_SPI = 255; // The pin which enables the SD card SPI buffer
+    uint8_t MICROSD_CS = 255; // The pin connected to the SD card chip select
+    uint8_t ISP_CIPO; // The pin connected to the target CIPO pin
+    uint8_t ISP_COPI; // The pin connected to the target COPI pin
+    uint8_t ISP_SCK; // The pin connected to the target SCK pin
+    uint8_t ISP_RST; // The pin connected to the target RST pin
+
+    //To get to the SD card we may need to provide it power by enabling an SPI switch/buffer
+    //And begin SD with the SD CS pin
+    bool mountSDCard();
+
+    // Functions needed for SPI (ICSP) progamming
+    // Author: Nick Gammon
+    // From: https://github.com/nickgammon/arduino_sketches/blob/master/Atmega_Hex_Uploader/ICSP_Utils.ino
+    byte program(const byte b1, const byte b2 = 0, const byte b3 = 0, const byte b4 = 0);
+    void clearPage();
+    void pollUntilReady();
+    void commitPage(unsigned long addr, bool showMessage = false);
+    bool hexConv(const char * (& pStr), byte &b);
+    bool processLine(const char * pLine, const byte action);
+    bool readHexFile(File firmwareFile, const byte action);
+    byte BB_SPITransfer(byte c);
 
     Stream *_debugSerial;           //The stream to send debug messages to if enabled
     boolean _printDebug = false;    //Flag to print the serial commands we are sending to the Serial port for debug

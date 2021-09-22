@@ -29,9 +29,9 @@
   Connect the SD breakout to your RedBoard:
     VCC            -> 3.3V (Note! microSD cards are not 5V compliant! You must use a level-shifter for 5V!)
     DAT3/!CS / CS  -> D10
-    DAT0/SDO / DO  -> D12 (CIPO)
-    CLK/SCK  / SCK -> D13 (SCK)
-    CMD/SDI  / DI  -> D11 (COPI)
+    DAT0/SDO / DO  -> SPI CIPO (D12)
+    CLK/SCK  / SCK -> SPI SCK (D13)
+    CMD/SDI  / DI  -> SPI COPI (D11)
     GND            -> GND
     
   Upload the code and open the Serial Monitor at 115200 baud.
@@ -48,13 +48,6 @@ const uint8_t ispCOPIpin = 6; // Use D6 to control the ISP COPI pin
 
 const uint8_t microSDCSpin = 10; // Use D10 for the microSD Chip Select
 
-const char firmwareFileName[] = "smol_Power_Board_AAA_ATtiny43U.ino.hex"; // Tell the library the name of the firmware Hex file
-
-const char targetName[] = "ATtiny43U"; // Tell the library the device we are expecting to program
-
-const byte newLowFuse  = 0x42; // Tell the library what we want the low fuse byte to be set to
-const byte newHighFuse = 0xDF; // Tell the library what we want the high fuse byte to be set to
-
 void setup()
 {
   Serial.begin(115200);
@@ -67,18 +60,32 @@ void setup()
   myISP.begin(ispCIPOpin, ispCOPIpin, ispSCKpin, ispRSTpin, microSDCSpin); // Tell the library which pins to use
 
   // Tell the library the name of the firmware file
-  myISP.setFileName(firmwareFileName);
+  // Note: the filename must be in 8.3 format
+  char fileName[] = "smolAAA1.hex";
+  myISP.setFileName(fileName);
 
   // Tell the library which device we are expecting to program
+  char targetName[] = "ATtiny43U";
   myISP.setTargetName(targetName);
 
   // Tell the library what we want the low fuse byte set to
   // (Note: setLowFuse does not actually program the fuse byte. programTarget does that.)
-  myISP.setLowFuse(newLowFuse); 
+  myISP.setLowFuse(0x62); 
 
   // Tell the library what we want the high fuse byte set to
   // (Note: setHighFuse does not actually program the fuse byte. programTarget does that.)
-  myISP.setHighFuse(newHighFuse); 
+  myISP.setHighFuse(0xDF); 
+
+  // Optional: tell the library what we want the extended fuse byte set to
+  // (Note: setExtendedFuse does not actually program the fuse byte. programTarget does that.)
+  myISP.setExtendedFuse(0xFF);
+
+  //Tell the library what clock speed to use during programming
+  //The max programming speed is 1/8 of the target's oscillator speed
+  //If target is internal 1MHz, this is 125kHz
+  //If target is internal 8MHz, this is 1MHz
+  //The fastest the bit-bang code can go is 500kHz. Selecting a speed higher than 500kHz will deliver 500kHz.
+  myISP.setProgrammingClockSpeed(125000); //Set the clock speed to 125kHz
 
   // Program the target device
   if (myISP.programTarget())
