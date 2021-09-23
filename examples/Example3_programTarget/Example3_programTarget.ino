@@ -28,7 +28,7 @@
     GND      -> GND
 
   Connect the SD breakout to your RedBoard:
-  Note! SD cards are not 5V compliant! You must use a level-shifter for 5V: https://www.sparkfun.com/products/13743
+  Note! SD cards are not 5V tollerant! You must use a level-shifter for 5V: https://www.sparkfun.com/products/13743
     VCC            -> 3.3V (See note above)
     DAT3/CS  / CS  -> D10
     DAT0/SDO / DO  -> SPI CIPO (D12)
@@ -93,7 +93,7 @@ void setup()
 
   // Program the target device
   if (myISP.programTarget())
-    Serial.print(F("Hey, it worked!"));
+    Serial.println(F("Hey, it worked!"));
   else
     Serial.println(F("Programming failed! Please see the debug messages for more information."));
 }
