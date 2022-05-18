@@ -105,7 +105,10 @@ bool SFE_AVR_ISP::programTarget()
   debugPrintln(F("SFE_AVR_ISP::programTarget: Begin Microcontroller programming"));
 
   if (mountSDCard() == false) //Start communication with SD card. This also starts SPI.
+  {
+    debugPrintln(F("SFE_AVR_ISP::programTarget: mountSDCard failed"));
     return (false);
+  }
 
   File firmwareFile = SD.open(firmwareFileName); //Firmware file to read. Limited file name length to 8.3 format
   if (!firmwareFile)
@@ -296,7 +299,7 @@ bool SFE_AVR_ISP::mountSDCard()
   if (!SD.begin(MICROSD_CS)) {
     debugPrintln(F("SFE_AVR_ISP::mountSDCard: SD initialization failed!"));
     if (SWITCH_ENABLE_SPI < 255)
-      digitalWrite(SWITCH_ENABLE_SPI, LOW); //Enable SPI
+      digitalWrite(SWITCH_ENABLE_SPI, LOW); //Disable SPI
     return (false);
   }
   return (true);
